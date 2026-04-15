@@ -21,7 +21,6 @@ SOL_MINT = "So11111111111111111111111111111111111111112"
 # Strategy params
 BUY_AMOUNT_SOL = 0.1        # 0.1 SOL per trade
 TP_MULTIPLIER = 2.5          # sell at 2.5x entry
-FALLBACK_SECONDS = 900       # dump at 15min if TP not hit
 
 log = logging.getLogger("trader")
 

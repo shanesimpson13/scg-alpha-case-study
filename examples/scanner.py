@@ -30,9 +30,11 @@ def _auth():
     return {"timestamp": str(int(time.time())), "client_id": str(uuid.uuid4())}
 
 
-async def api_get(session, path, params={}):
+async def api_get(session, path, params=None):
     """GET from GMGN API with auth."""
     auth = _auth()
+    if params is None:
+        params = {}
     try:
         async with session.get(
             f"{GMGN_HOST}{path}",
@@ -152,6 +154,18 @@ async def scan_trending(session, on_qualified):
             # Check liquidity trend (last 3 scans)
             last_3_liq = [s["liq"] for s in scans[-3:]]
             liq_healthy = last_3_liq[-1] >= last_3_liq[0]
+
+            # Quality filters using GMGN data from latest scan
+            latest = scans[-1]
+            if latest["rug_ratio"] > 0.5:
+                expired.append(mint)
+                continue
+            if latest["bot_degen_rate"] > 0.45:
+                expired.append(mint)
+                continue
+            if latest["bundler_rate"] > 0.40:
+                expired.append(mint)
+                continue
 
             if MIN_HOLDER_GROWTH <= growth <= MAX_HOLDER_GROWTH and liq_healthy:
                 log.info(
