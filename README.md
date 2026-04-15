@@ -183,6 +183,12 @@ for label, delay in [("5m", 300), ("15m", 900), ("30m", 1800), ("1hr", 3600)]:
 
 A public-facing dashboard showing every signal in real-time with full transparency.
 
+![Performance Recap — 122 calls, 98% win rate, 2.51x avg return](screenshots/vault-recap.png)
+
+![Signal Card — Harry 19.1x with full on-chain metrics from GMGN](screenshots/vault-signal-card.png)
+
+![Top Performers — Sora 12.57x, Swinu 11.11x](screenshots/vault-top-performers.png)
+
 ### Features
 - Live signal cards with return multiple and 9 on-chain metrics
 - Active signals with real-time price updates
