@@ -2,7 +2,7 @@
 
 **Built on the GMGN Agent API**
 
-SCG Alpha is a full-stack Solana token intelligence platform that discovers, scores, tracks, and trades pump.fun tokens in real-time. It combines GMGN's market data with custom scoring algorithms and automated execution to surface high-conviction signals before they peak.
+SCG Alpha is a full-stack Solana token intelligence platform that discovers, filters, tracks, and trades pump.fun tokens in real-time. It combines GMGN's market data with multi-layer scam filtering and automated execution to surface high-conviction signals before they peak.
 
 > **Live Dashboard:** [vault.scgalpha.com](https://vault.scgalpha.com) — 700+ unique visitors in the first week
 
@@ -11,17 +11,16 @@ SCG Alpha is a full-stack Solana token intelligence platform that discovers, sco
 ## What It Does
 
 ```
-GMGN Trending Scanner → Multi-Scan Tracking → Scoring Engine → Live Dashboard + Auto-Trading
-      (30s polls)          (5min watch)        (0-100 score)     (682 visitors)    (GMGN swap)
+GMGN Trending Scanner → Multi-Scan Tracking → Scam Filters → Live Dashboard + Auto-Trading
+      (30s polls)          (5min watch)        (multi-layer)    (682 visitors)    (GMGN swap)
 ```
 
 1. **Discover** — Polls GMGN `/v1/market/rank` every 30 seconds for trending Solana tokens
 2. **Track** — Monitors tokens across 10+ consecutive scans, watching holder growth and liquidity stability
-3. **Filter** — Applies scam detection filters using GMGN security data (rug ratio, bundler rate, bot/degen wallets, entrapment)
-4. **Score** — Computes a 0-100 conviction score based on weighted on-chain metrics
-5. **Alert** — Publishes scored signals to a live public dashboard and Telegram channel
-6. **Trade** — Executes automated buys via GMGN `/v1/trade/swap` with server-side take-profit condition orders
-7. **Track Returns** — Monitors price at 5m, 15m, 30m, 1hr intervals and records all-time-high post-signal
+3. **Filter** — Applies multi-layer scam detection using GMGN security data (rug ratio, bundler rate, bot/degen wallets, entrapment, wash trading)
+4. **Alert** — Publishes signals to a live public dashboard and Telegram channel with full on-chain metrics
+5. **Trade** — Executes automated buys via GMGN `/v1/trade/swap` with server-side take-profit condition orders
+6. **Track Returns** — Monitors price at 5m, 15m, 30m, 1hr intervals and records all-time-high post-signal
 
 ---
 
@@ -35,14 +34,14 @@ GMGN Trending Scanner → Multi-Scan Tracking → Scoring Engine → Live Dashbo
        │                  │                  │              │
        ▼                  ▼                  ▼              ▼
 ┌──────────┐    ┌──────────────┐    ┌──────────────┐  ┌──────────┐
-│ Scanner  │───▶│  Score Engine │───▶│ Alert System │  │  Trader  │
-│ (30s)    │    │  (0-100)     │    │ (Dashboard)  │  │ (GMGN)   │
+│ Scanner  │───▶│ Scam Filters │───▶│ Alert System │  │  Trader  │
+│ (30s)    │    │ (multi-layer)│    │ (Dashboard)  │  │ (GMGN)   │
 └──────────┘    └──────────────┘    └──────────────┘  └──────────┘
        │              │                    │                │
        ▼              ▼                    ▼                ▼
 ┌──────────┐    ┌──────────┐    ┌──────────────────┐  ┌──────────┐
-│ Tracker  │    │ Filters  │    │ Price Tracker    │  │ Exit Mgr │
-│ (5min)   │    │ (scam)   │    │ (5m/15m/30m/1h) │  │ (TP/SL)  │
+│ Tracker  │    │ Verify   │    │ Price Tracker    │  │ Exit Mgr │
+│ (5min)   │    │ (buy-time│    │ (5m/15m/30m/1h) │  │ (TP)     │
 └──────────┘    └──────────┘    └──────────────────┘  └──────────┘
 ```
 
@@ -52,7 +51,7 @@ GMGN Trending Scanner → Multi-Scan Tracking → Scoring Engine → Live Dashbo
 |-----------|-------------|-------------------|
 | **Scanner** | Polls trending tokens every 30s, tracks across multiple scans | `/v1/market/rank` |
 | **Tracker** | Monitors holder growth, liquidity stability over 5+ minutes | `/v1/market/rank` (scan data) |
-| **Score Engine** | Weighted scoring: rug ratio, entrapment, holder growth, bot %, bundler %, KOL count | `/v1/token/info`, `/v1/token/security` |
+| **Scam Filters** | Multi-layer filtering: rug ratio, entrapment, holder growth, bot %, bundler %, wash trading | `/v1/token/info`, `/v1/token/security` |
 | **Alert System** | Publishes to live web dashboard + Telegram with full metrics snapshot | — |
 | **Price Tracker** | Records price at 5m, 15m, 30m, 1hr + granular 30s journal | `/v1/token/info` |
 | **ATH Watcher** | Monitors for 24h post-completion for understated returns | `/v1/token/info` |
@@ -103,22 +102,28 @@ security = await api_get(session, "/v1/token/security", {
 # - Migration status verification
 ```
 
-### 3. Scoring — Conviction Engine
+### 3. Qualification — Multi-Layer Filtering
 
-Each token receives a **0-100 score** computed from GMGN metrics:
+Tokens must pass scam detection filters at both scan time and buy time using fresh GMGN data:
 
 ```python
-def compute_score(token):
-    score = 0
-    score += 25 * (1 - token.rug_ratio)           # Lower rug risk = higher score
-    score += 20 * (1 - token.entrapment_ratio)     # Lower entrapment = higher score
-    score += 15 * scale(token.holder_growth, ...)   # Healthy growth trajectory
-    score += 10 * (1 - token.bot_degen_pct / 0.45) # Penalize bot activity
-    score += 10 * (1 - token.bundler_pct / 0.40)   # Penalize bundled supply
-    score += 10 * min(token.kol_count / 3, 1.0)    # Reward KOL attention
-    # + bonus conditions
-    return clamp(score, 0, 100)
+# Scan-time filters (from /v1/market/rank trending data):
+# - Developer team hold rate
+# - Top 10 holder concentration
+# - Parabolic 5m% rejection (buying the top)
+# - Platform filter (pump.fun only)
+
+# Buy-time filters (fresh /v1/token/info + /v1/token/security):
+# - Bot/degen wallet rate (artificial holder inflation)
+# - Bundler trader volume percentage (coordinated manipulation)
+# - Fresh wallet rate anomalies (manufactured metrics)
+# - Buy/sell ratio bounds (wash trading detection)
+# - B/S symmetry + high volume = wash signal
+# - Migration verification (must be off bonding curve)
+# - 5m% at buy time (reject dumps and parabolic tops)
 ```
+
+The key insight from backtesting: **filter quality matters more than scoring**. A token that passes strict scam filters with healthy holder growth outperforms a high-scored token with suspicious on-chain patterns.
 
 ### 4. Trading — GMGN Swap with Condition Orders
 
@@ -179,7 +184,7 @@ for label, delay in [("5m", 300), ("15m", 900), ("30m", 1800), ("1hr", 3600)]:
 A public-facing dashboard showing every signal in real-time with full transparency.
 
 ### Features
-- Live signal cards with score, return multiple, and 9 on-chain metrics
+- Live signal cards with return multiple and 9 on-chain metrics
 - Active signals with real-time price updates
 - Completed signals with tracked returns at each time interval
 - Performance recap with win rate, average return, and best performers
@@ -199,14 +204,14 @@ A public-facing dashboard showing every signal in real-time with full transparen
 
 ### Signal Performance (30-day sample)
 - **119 total signals** tracked with full price history
-- Signals scored 65+ with healthy holder growth show significantly higher win rates
+- Tokens passing strict scam filters with healthy holder growth show significantly higher win rates
 - Top performers achieved 5-19x returns within the first hour
 
 ### Backtesting
 The granular price journal data enables strategy backtesting:
 - Tested across TP levels, timed exits, trailing stops, and hybrid strategies
 - Cost-adjusted simulations with realistic slippage and fees
-- Filter optimization (score thresholds, holder growth, bot/degen rates)
+- Filter optimization (holder growth, bot/degen rates, liquidity stability)
 
 ### Dashboard Traction
 - **682 unique visitors** in the first day of launch
@@ -235,7 +240,7 @@ The granular price journal data enables strategy backtesting:
 ```
 scg-alpha/
 ├── vault/                  # Signal engine + API server (EC2)
-│   ├── vault.py            # Scanner, scorer, tracker, API, analytics
+│   ├── vault.py            # Scanner, filters, tracker, API, analytics
 │   ├── analytics/          # Event logs + SQLite cache
 │   └── alerts.jsonl        # Signal history
 ├── dsb/                    # Automated trading bot (EC2)
@@ -257,7 +262,7 @@ GMGN's Agent API is the backbone of this entire platform. Here's why:
 
 1. **Single source of truth** — Trending data, token metadata, security analysis, holder data, and trade execution all from one API. No need to stitch together 5 different data providers.
 
-2. **Rich scam detection** — Rug ratio, entrapment ratio, bundler rate, bot/degen wallet classification, and wash trading flags are critical for our scoring engine. This data doesn't exist elsewhere in a single call.
+2. **Rich scam detection** — Rug ratio, entrapment ratio, bundler rate, bot/degen wallet classification, and wash trading flags are critical for our filtering pipeline. This data doesn't exist elsewhere in a single call.
 
 3. **Server-side condition orders** — The trade API's `profit_stop` condition orders let us set take-profit targets that GMGN monitors and executes automatically. This eliminates thousands of price polling API calls and removes rate limit concerns entirely.
 
