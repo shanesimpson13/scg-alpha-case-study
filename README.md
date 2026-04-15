@@ -119,7 +119,6 @@ Tokens must pass scam detection filters at both scan time and buy time using fre
 # - Fresh wallet rate anomalies (manufactured metrics)
 # - Buy/sell ratio bounds (wash trading detection)
 # - B/S symmetry + high volume = wash signal
-# - Migration verification (must be off bonding curve)
 # - 5m% at buy time (reject dumps and parabolic tops)
 ```
 
