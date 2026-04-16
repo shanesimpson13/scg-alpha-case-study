@@ -280,7 +280,7 @@ GMGN's Agent API is the backbone of this entire platform. Here's why:
 - **Live Dashboard:** [vault.scgalpha.com](https://vault.scgalpha.com)
 - **Twitter/X:** [@scg_alpha](https://x.com/scg_alpha)
 - **Telegram:** [t.me/scg_alpha](https://t.me/scg_alpha)
-- **GMGN API Docs:** [docs.gmgn.ai](https://docs.gmgn.ai/index/gmgn-agent-api)
+- **GMGN API Docs:** [github.com/gmgnai/gmgn-skills](https://github.com/gmgnai/gmgn-skills)
 
 ---
 
