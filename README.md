@@ -4,7 +4,9 @@
 
 SCG Alpha is a full-stack Solana token intelligence platform that discovers, filters, tracks, and trades pump.fun tokens in real-time. It combines GMGN's market data with multi-layer scam filtering and automated execution to surface high-conviction signals before they peak.
 
-> **Live Dashboard:** [vault.scgalpha.com](https://vault.scgalpha.com) — 700+ unique visitors in the first week
+> **Live Dashboard:** [scgalpha.com](https://scgalpha.com) — 700+ unique visitors in the first week
+>
+> **Build your own bot:** see [`bot-starter/`](./bot-starter) for a working trading bot you can plug your own strategy into. Reads SCG Alpha signals, executes Jupiter Ultra swaps, handles partial sells, dry-run mode included.
 
 ---
 
@@ -178,7 +180,7 @@ for label, delay in [("5m", 300), ("15m", 900), ("30m", 1800), ("1hr", 3600)]:
 
 ## The Vault — Live Dashboard
 
-**[vault.scgalpha.com](https://vault.scgalpha.com)**
+**[scgalpha.com](https://scgalpha.com)**
 
 A public-facing dashboard showing every signal in real-time with full transparency.
 
@@ -277,7 +279,7 @@ GMGN's Agent API is the backbone of this entire platform. Here's why:
 
 ## Links
 
-- **Live Dashboard:** [vault.scgalpha.com](https://vault.scgalpha.com)
+- **Live Dashboard:** [scgalpha.com](https://scgalpha.com)
 - **Twitter/X:** [@scg_alpha](https://x.com/scg_alpha)
 - **Telegram:** [t.me/scg_alpha](https://t.me/scg_alpha)
 - **GMGN API Docs:** [github.com/gmgnai/gmgn-skills](https://github.com/gmgnai/gmgn-skills)
